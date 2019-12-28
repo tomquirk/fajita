@@ -1,0 +1,15 @@
+language: python
+python: 3.7
+cache: pip
+
+before_install:
+  - pip install pipenv
+
+install:
+  - pipenv install
+  - pipenv install black --pre
+  - pipenv install pytest
+
+script:
+  - black --check .
+  - pipenv run python -m pytest tests
