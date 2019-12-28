@@ -15,13 +15,16 @@ class Client(object):
         refresh_cookies=False,
         proxies={},
         authenticate_fn=None,
+        cookie_directory=None
     ):
         self.session = requests.session()
         self.logger = logger
         self._authenticate = authenticate_fn
 
         self._use_cookie_cache = not refresh_cookies
-        self._cookie_repository = CookieRepository()
+        self._cookie_repository = (
+            CookieRepository(cookie_directory) if cookie_directory else None
+        )
 
         self.session.proxies.update(proxies)
         self.session.headers.update(headers)
@@ -42,7 +45,7 @@ class Client(object):
         if not self._authenticate:
             return
 
-        if self._use_cookie_cache:
+        if self._use_cookie_cache and self._cookie_repository is not None:
             self.logger.debug("Attempting to use cached cookies")
             cookies = self._cookie_repository.get(username)
             if cookies:
@@ -52,4 +55,6 @@ class Client(object):
         res = self._authenticate(username, password)
 
         self._set_session_cookies(res.cookies)
-        self._cookie_repository.save(res.cookies, username)
+
+        if self._cookie_repository:
+            self._cookie_repository.save(res.cookies, username)

@@ -32,13 +32,19 @@ class Fajita(object):
         debug=False,
         username=None,
         password=None,
-        authenticate=True,
+        authenticate=False,
+        cookie_directory=None,
     ):
         self._client = Client(
-            headers={}, refresh_cookies=refresh_cookies, debug=debug, proxies=proxies
+            headers=headers,
+            refresh_cookies=refresh_cookies,
+            debug=debug,
+            proxies=proxies,
+            cookie_directory=cookie_directory,
         )
         self._logger = logger
         self._base_url = base_url
+        self._fresh = True  # False if the instance has been used
 
         logging.basicConfig(level=logging.DEBUG if debug else logging.INFO)
 
@@ -51,7 +57,9 @@ class Fajita(object):
         """
         GET request to Linkedin API
         """
-        evade()
+        if not self._fresh:
+            evade()
+        self._fresh = False
 
         url = f"{base_url or self._base_url}{uri}"
         return self._client.session.get(url, **kwargs)
@@ -60,7 +68,28 @@ class Fajita(object):
         """
         POST request to Linkedin API
         """
-        evade()
+        if not self._fresh:
+            evade()
+        self._fresh = False
 
         url = f"{base_url or self._base_url}{uri}"
         return self._client.session.post(url, **kwargs)
+
+    def _scroll(
+        self, uri, method, parse_items, next_page_fn, done_fn, items=[], **kwargs
+    ):
+        res = None
+        if method == "GET":
+            res = self._get(uri, **kwargs)
+        elif method == "POST":
+            res = self._post(uri, **kwargs)
+        items = items + parse_items(res)
+
+        if done_fn(items, **kwargs):
+            return items
+
+        new_kwargs = next_page_fn(**kwargs)
+        return self._scroll(
+            uri, method, parse_items, next_page_fn, done_fn, items=items, **new_kwargs
+        )
+
