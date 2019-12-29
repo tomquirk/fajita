@@ -85,7 +85,7 @@ class Fajita(object):
             res = self._post(uri, **kwargs)
         items = items + parse_items(res)
 
-        if done_fn(items, **kwargs):
+        if done_fn(items, res, **kwargs):
             return items
 
         new_kwargs = next_page_fn(**kwargs)
