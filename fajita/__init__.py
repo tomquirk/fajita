@@ -4,7 +4,7 @@
 from .fajita import Fajita
 
 __title__ = "fajita"
-__version__ = "0.0.1b1"
+__version__ = "0.0.2"
 __description__ = "Quick Python wrappers for HTTP APIs"
 
 __license__ = "MIT"
